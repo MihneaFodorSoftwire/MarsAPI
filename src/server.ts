@@ -41,7 +41,7 @@ app.get('/rovers', async (_req: any, res: any) => {
 
 app.get('/rovers/:rover/photos/:camera', async (_req: any, res: any) => {
     const { rover, camera } = _req.params;
-    const sol = 1000;
+    const sol = parseInt(_req.query.sol as string) || 1000;
 
     const url = `https://api.nasa.gov/mars-photos/api/v1/rovers/${rover}/photos?camera=${camera}&sol=${sol}&api_key=${NASA_API_KEY}`;
 
