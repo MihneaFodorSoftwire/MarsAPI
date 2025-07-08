@@ -31,11 +31,12 @@ enum Rovers {
 app.use(express.json());
 
 const router = express.Router();
-router.get('/test', (_req: any, res: any) => res.send('Hello world!'));
+router.get('/test', (req: any, res: any) => res.send('Hello world!'));
 
-app.get('/rovers', async (_req: any, res: any) => {
+app.get('/rovers', async (req: any, res: any) => {
     try {
-        const { data } = await axios.get(`https://api.nasa.gov/mars-photos/api/v1/rovers?api_key=${NASA_API_KEY}`);
+        const url = `https://api.nasa.gov/mars-photos/api/v1/rovers?api_key=${NASA_API_KEY}`;
+        const { data } = await axios.get(url);
         res.json(data);
     } catch (err) {
         console.error(err);
@@ -43,11 +44,35 @@ app.get('/rovers', async (_req: any, res: any) => {
     }
 });
 
-app.get('/rovers/:rover/photos/:camera', async (_req: any, res: any) => {
-    const { rover, camera } = _req.params;
-    const sol = parseInt(_req.query.sol as string) || 1000;
+app.get('/rovers/:rover/photos/:camera', async (req: any, res: any) => {
+    const { rover, camera } = req.params;
+    const { sol, earth_date, paginationStart, paginationEnd } = req.query;
 
-    const url = `https://api.nasa.gov/mars-photos/api/v1/rovers/${rover}/photos?camera=${camera}&sol=${sol}&api_key=${NASA_API_KEY}`;
+    let startIndex: number|undefined;
+    let endIndex: number|undefined;
+
+    let earthDate: string|undefined;
+
+    let url: string = `https://api.nasa.gov/mars-photos/api/v1/rovers/${rover}/photos?camera=${camera}&sol=${sol}&api_key=${NASA_API_KEY}`;
+
+    if (paginationStart && paginationEnd) {
+        if (paginationStart > paginationEnd) {
+            return res.status(400).json({error: 'paginationStart must be smaller than paginationEnd'});
+        }
+        url += `&pagination_start=${paginationStart}`;
+        url += `&pagination_end=${paginationEnd}`;
+        startIndex = parseInt(paginationStart, 10);
+        endIndex = parseInt(paginationEnd, 10);
+    }
+
+    if (earth_date) {
+        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+        if (!dateRegex.test(earth_date as string)) {
+            return res.status(400).json({error: 'Invalid earth_date format. Use YYYY-MM-DD'});
+        }
+        url += `&earth_date=${earth_date}`;
+        earthDate = `${earth_date}`;
+    }
 
     try {
         const { data } = await axios.get<PhotoResponse>(url);
@@ -55,12 +80,12 @@ app.get('/rovers/:rover/photos/:camera', async (_req: any, res: any) => {
         const trimmedPhotos: TrimmedPhoto[] = data.photos.map((photo: Photo) => ({
             id: photo.id,
             sol: photo.sol,
-            camera_name: photo.camera.name,
-            img_src: photo.img_src,
-            earth_date: photo.earth_date,
-            rover_name: photo.rover.name
+            cameraName: photo.camera.name,
+            imgSrc: photo.img_src,
+            earthDate: photo.earth_date,
+            roverName: photo.rover.name
         }));
-        res.json(trimmedPhotos);
+        res.json(trimmedPhotos.slice(startIndex, endIndex));
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Failed to fetch rover photos from NASA API' });
