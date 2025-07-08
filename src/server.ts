@@ -4,9 +4,11 @@ import {Photo} from "./photo";
 import {PhotoResponse} from "./photoResponse";
 import {TrimmedPhoto} from "./trimmedPhoto";
 
+require('dotenv').config();
+const NASA_API_KEY = process.env.NASA_API_KEY;
+
 const app = express();
 const port = 8000;
-const NASA_API_KEY = 'IpwfgIXjt6qCwGbXccCBXGK2nCldkcxcSiPXBbu3';
 
 enum Camera {
     FHAZ = 'FHAZ',
@@ -33,7 +35,7 @@ router.get('/test', (_req: any, res: any) => res.send('Hello world!'));
 
 app.get('/rovers', async (_req: any, res: any) => {
     try {
-        const { data } = await axios.get(`https://api.nasa.gov/mars-photos/api/v1/rovers?api_key=IpwfgIXjt6qCwGbXccCBXGK2nCldkcxcSiPXBbu3`);
+        const { data } = await axios.get(`https://api.nasa.gov/mars-photos/api/v1/rovers?api_key=${NASA_API_KEY}`);
         res.json(data);
     } catch (err) {
         console.error(err);
