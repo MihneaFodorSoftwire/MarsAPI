@@ -59,8 +59,6 @@ app.get('/rovers/:rover/photos/:camera', async (req: any, res: any) => {
         if (paginationStart > paginationEnd) {
             return res.status(400).json({error: 'paginationStart must be smaller than paginationEnd'});
         }
-        url += `&pagination_start=${paginationStart}`;
-        url += `&pagination_end=${paginationEnd}`;
         startIndex = parseInt(paginationStart, 10);
         endIndex = parseInt(paginationEnd, 10);
     }
@@ -70,7 +68,6 @@ app.get('/rovers/:rover/photos/:camera', async (req: any, res: any) => {
         if (!dateRegex.test(earth_date as string)) {
             return res.status(400).json({error: 'Invalid earth_date format. Use YYYY-MM-DD'});
         }
-        url += `&earth_date=${earth_date}`;
         earthDate = `${earth_date}`;
     }
 
@@ -85,7 +82,9 @@ app.get('/rovers/:rover/photos/:camera', async (req: any, res: any) => {
             earthDate: photo.earth_date,
             roverName: photo.rover.name
         }));
-        res.json(trimmedPhotos.slice(startIndex, endIndex));
+        res.json(trimmedPhotos
+            .slice(startIndex, endIndex)
+            .filter((photo): photo is TrimmedPhoto => photo.earthDate === earthDate));
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Failed to fetch rover photos from NASA API' });
