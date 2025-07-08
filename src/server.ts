@@ -10,6 +10,7 @@ const NASA_API_KEY = process.env.NASA_API_KEY;
 const app = express();
 const port = 8000;
 
+/*
 enum Camera {
     FHAZ = 'FHAZ',
     RHAZ = 'RHAZ',
@@ -27,6 +28,7 @@ enum Rovers {
     Opportunity = 'Opportunity',
     Spirit =  'Spirit'
 }
+ */
 
 app.use(express.json());
 
@@ -62,6 +64,9 @@ app.get('/rovers/:rover/photos/:camera', async (req: any, res: any) => {
         startIndex = parseInt(paginationStart, 10);
         endIndex = parseInt(paginationEnd, 10);
     }
+    if (startIndex === undefined) {
+        startIndex = 0;
+    }
 
     if (earth_date) {
         const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
@@ -82,9 +87,12 @@ app.get('/rovers/:rover/photos/:camera', async (req: any, res: any) => {
             earthDate: photo.earth_date,
             roverName: photo.rover.name
         }));
+        if (endIndex == undefined) {
+            endIndex = trimmedPhotos.length - 1;
+        }
         res.json(trimmedPhotos
             .slice(startIndex, endIndex)
-            .filter((photo): photo is TrimmedPhoto => photo.earthDate === earthDate));
+            .filter((photo): photo is TrimmedPhoto => earthDate == undefined || photo.earthDate === earthDate));
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Failed to fetch rover photos from NASA API' });
